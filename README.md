@@ -64,8 +64,8 @@ bash tools/build.sh "/c/Games/Midnight Club - Street Racing (USA).iso"
 1. fetches ps2-native-recomp v0.0.4 (the submodule) and applies `patches/ps2-native-recomp.patch`;
 2. sets up the toolkit's build tools;
 3. translates the game's code from your disc into C++ and builds the game program (`ps2run.exe`);
-4. builds the launcher, `MC1Recomp.exe` (with an icon only if `hub/icon/hub.png` exists or `tools/make_icon.ps1 -Url`
-   is given one).
+4. downloads the launcher's icon (`tools/make_icon.ps1`; any square PNG at `hub/icon/hub.png` is used instead) and builds
+   the launcher, `MC1Recomp.exe`, whose icon the game window shows too.
 
 The first build takes a while. Code the first build did not see is translated while you play and kept for next time.
 
@@ -117,13 +117,15 @@ the game runs, it reads its data from your disc image.
 - AMD FidelityFX Super Resolution 1.0 (MIT, Copyright (c) 2021 Advanced Micro Devices, Inc.): the FSR picture mode is
   written after AMD's published shaders.
 - Box art in the launcher: [libretro-thumbnails](https://github.com/libretro-thumbnails/libretro-thumbnails).
+- The launcher and game window icon: [Midnight Club: Street Racing icon by r_dsgnd](https://www.steamgriddb.com/icon/119111)
+  on SteamGridDB, downloaded at build time.
 
 ## License
 
 MIT; see `LICENSE`. ps2-native-recomp is MIT as well.
 
 Midnight Club is a trademark of Take-Two Interactive Software, Inc., and the game is copyright its owners. This repository
-contains none of its code, data or artwork.
+contains none of its code, data or artwork, nor the icon and box art the launcher downloads.
 
 ## AI disclosure
 

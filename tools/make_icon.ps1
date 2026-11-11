@@ -1,14 +1,14 @@
 # Builds hub/icon/hub.ico (the launcher's icon, which the game window shows too) from hub/icon/hub.png.
-# Without a hub.png it first downloads one from -Url (none is chosen for Midnight Club yet, so by default the launcher is
-# built without an icon). An icon is not ours to redistribute, so hub/icon/ is not in the repository: this script fetches
-# it on each machine. Any square PNG put at hub/icon/hub.png is used instead.
+# Without a hub.png it first downloads the Midnight Club: Street Racing icon by r_dsgnd from SteamGridDB
+# (https://www.steamgriddb.com/icon/119111). The icon is not ours to redistribute, so hub/icon/ is not in the repository:
+# this script fetches it on each machine. Any square PNG put at hub/icon/hub.png is used instead.
 # The .ico holds PNG-compressed 256, 64, 48, 32 and 16 pixel images.
 #
 # Usage (from the repository root): powershell -ExecutionPolicy Bypass -File tools\make_icon.ps1 [-Url <png url>]
 param(
     [string]$Png = "$PSScriptRoot\..\hub\icon\hub.png",
     [string]$Ico = "$PSScriptRoot\..\hub\icon\hub.ico",
-    [string]$Url = ""
+    [string]$Url = "https://cdn2.steamgriddb.com/icon/6f325c0757f8c981d95f4392dad1101f/32/512x512.png"
 )
 $ErrorActionPreference = "Stop"
 New-Item -ItemType Directory -Force (Split-Path $Png) | Out-Null

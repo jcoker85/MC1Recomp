@@ -52,7 +52,7 @@ Thumbs.db
 .DS_Store
 __pycache__/
 
-# The launcher icon: made by tools/make_icon.ps1 from a downloaded or local PNG, not ours to redistribute
+# The launcher icon (Midnight Club: Street Racing icon by r_dsgnd, SteamGridDB): downloaded by tools/make_icon.ps1, not ours to redistribute
 /hub/icon/
 
 # MC1Recomp: the converted disc image and the toolkit's per-game working files live outside git
