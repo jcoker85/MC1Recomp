@@ -1,0 +1,11 @@
+# Midnight Club "4:3 Menus" (the launcher's Menu/Movie Aspect Ratio option): with widescreen on, only the driving (cruise,
+# races and their pause menu) is 16:9; the front-end menus, the loading screen and the videos are 4:3.
+# NAME=VALUE lines set for the runtime (runtime/src/system.cpp, update_wide):
+#   PS2_WIDE_ONLY_IF  16:9 only while this 32-bit word of EE memory has this value, and no IPU picture decode in the last 15
+#                     frames (the videos). 0x002C3C78 is a flag the game reads all over its code: 0 in the front end and on
+#                     the loading screen, 1 from the first frame of driving until "Back To Main Menu" (found 2026-11-10 by
+#                     EE RAM dumps of the title, city select, vehicle select, loading, driving, pause and after quitting).
+#   PS2_WIDE_WORD     the runtime writes 1/0 into this 16-bit word each frame; widescreen43.txt (the widescreen patch for
+#                     this mode) writes the 16:9 values while it is 1 and the game's own 1.0 values while it is 0.
+PS2_WIDE_ONLY_IF=002C3C78=1
+PS2_WIDE_WORD=000FFF00

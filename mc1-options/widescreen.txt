@@ -1,0 +1,12 @@
+# [Widescreen 16:9] by PeterDelta (PCSX2 community patch, SLUS-20063 DFD26C76), as ps2run --patches lines:
+# PLACE ADDRESS BYTES VALUE, place 1 = written every frame; place 3 = the next BYTES lines apply only while the 16-bit
+# value at ADDRESS is VALUE (PCSX2's E0 code: 3 on the car select screen).
+1 004784C0 4 3F400000
+1 00426180 4 3FAB0000
+1 004784D4 4 3F800000
+1 004784FC 4 3F800000
+1 004261C0 4 3F800000
+3 00326300 3 3
+1 004784D4 4 3F400000
+1 004784FC 4 3F400000
+1 004261C0 4 3F400000

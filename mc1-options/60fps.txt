@@ -1,0 +1,2 @@
+# [60 FPS] by asasega (PCSX2 community patch): the game's frame interval (2 vsyncs, set at boot at 0x1006A4) kept at 1.
+1 00302934 4 1
