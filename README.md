@@ -97,6 +97,10 @@ the game runs, it reads its data from your disc image.
     with a branch in a branch's delay slot, which only the interpreter runs: 17 % of the game's thread), and Smooth
     Distant Textures reads 4x fewer texels (single-texel taps, only past 1.5 texels a sample);
   - the HUD squeeze's frame width (`PS2_HUD_WIDTH`, 640 here; MC2's frame is 512);
+  - the picture height of interlaced frame mode (SMODE2 INT=1, FFMD=1) counts both fields, as PCSX2 reads it: the intro
+    movies (a 640x448 window of 720x480 frames) showed 480 lines, 32 of them empty memory under the picture;
+  - at higher resolutions, a texture the game drew itself (the cars' reflection map) is read at the sample under the texture
+    position instead of the screen pixel's own: the screen position made a 4-pixel screen-door grid over the cars at 4x;
   - fair interrupt turns: pending DMAC channels are served in rotation, alternating with the INTC. A stream of instant VIF1
     transfers kept channel 1 pending, so the SIF0 interrupt (the IOP's replies) waited for frames, and the game, blocked in
     its rumble and sound calls, fell to about 10 frames a second while scraping a wall.
