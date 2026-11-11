@@ -96,7 +96,10 @@ the game runs, it reads its data from your disc image.
   - speed: the vector unit interpreter goes on in compiled code after a jump (two of the game's busiest VU1 programs start
     with a branch in a branch's delay slot, which only the interpreter runs: 17 % of the game's thread), and Smooth
     Distant Textures reads 4x fewer texels (single-texel taps, only past 1.5 texels a sample);
-  - the HUD squeeze's frame width (`PS2_HUD_WIDTH`, 640 here; MC2's frame is 512).
+  - the HUD squeeze's frame width (`PS2_HUD_WIDTH`, 640 here; MC2's frame is 512);
+  - fair interrupt turns: pending DMAC channels are served in rotation, alternating with the INTC. A stream of instant VIF1
+    transfers kept channel 1 pending, so the SIF0 interrupt (the IOP's replies) waited for frames, and the game, blocked in
+    its rumble and sound calls, fell to about 10 frames a second while scraping a wall.
 - `ps2-native-recomp/`: the toolkit, as a git submodule.
 - `tools/`: the build script, the release packaging script, the icon script and `mips.py` (a small R5900 disassembler and
   address-reference finder used to trace the game's code).
