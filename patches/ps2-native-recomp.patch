@@ -490,10 +490,18 @@ index 6c7c2dc..e3355f1 100644
      g_notice_text = kStartNotice;
      std::fprintf(stderr, "[menu] the quick menu: F1%s on the keyboard, hold Select then press Start (or Guide) on a controller\n",
 diff --git a/runtime/include/ps2/system.hpp b/runtime/include/ps2/system.hpp
-index d0d445f..1140c2b 100644
+index d0d445f..06951ad 100644
 --- a/runtime/include/ps2/system.hpp
 +++ b/runtime/include/ps2/system.hpp
-@@ -125,6 +125,8 @@ bool load_state(const std::uint8_t *data, std::size_t size);
+@@ -21,6 +21,7 @@ struct Press {
+     std::uint32_t frames;
+     std::uint16_t buttons;
+     std::uint8_t stick = 0;
++    std::uint8_t pad = 0;  // 1: the second controller (button names with a "p2" in front, --press 100:p2cross)
+ };
+ 
+ struct Patch {
+@@ -125,6 +126,8 @@ bool load_state(const std::uint8_t *data, std::size_t size);
  bool halted();
  const std::string &halt_reason();
  std::uint64_t frame_count();
@@ -2191,10 +2199,46 @@ index 2f2f625..ca73942 100644
      }
      // Threads start with kIdle as their return address, and the idle loop is the only other way to get
 diff --git a/runtime/src/system.cpp b/runtime/src/system.cpp
-index 199204d..f32a3da 100644
+index 199204d..d30c843 100644
 --- a/runtime/src/system.cpp
 +++ b/runtime/src/system.cpp
-@@ -233,7 +233,31 @@ void time_frames() {
+@@ -162,16 +162,27 @@ void apply_presses() {
+     std::uint64_t last = 0;
+     for (const Press &p : g_options.presses) last = std::max<std::uint64_t>(last, p.frame + p.frames);
+     if (!g_options.presses.empty() && g_frames <= last) {
+-        std::uint16_t mask = 0;
+-        std::uint8_t stick = 0;
+-        for (const Press &p : g_options.presses)
++        std::uint16_t mask[2] = {};
++        std::uint8_t stick[2] = {};
++        bool second = false;
++        for (const Press &p : g_options.presses) {
++            second = second || p.pad == 1;
+             if (g_frames >= p.frame && g_frames < p.frame + p.frames) {
+-                mask |= p.buttons;
+-                stick |= p.stick;
++                mask[p.pad & 1u] |= p.buttons;
++                stick[p.pad & 1u] |= p.stick;
+             }
+-        set_pad_buttons(mask, 0);
+-        set_pad_axis(2, (stick & 4u) ? 0x00 : (stick & 8u) ? 0xFF : 0x80, 0);
+-        set_pad_axis(3, (stick & 1u) ? 0x00 : (stick & 2u) ? 0xFF : 0x80, 0);
++        }
++        // A run with presses for the second controller has it plugged in from the start
++        static bool plugged = false;
++        if (second && !plugged) {
++            set_pad_connected(1, true);
++            plugged = true;
++        }
++        for (int pad = 0; pad < (second ? 2 : 1); ++pad) {
++            set_pad_buttons(mask[pad], pad);
++            set_pad_axis(2, (stick[pad] & 4u) ? 0x00 : (stick[pad] & 8u) ? 0xFF : 0x80, pad);
++            set_pad_axis(3, (stick[pad] & 1u) ? 0x00 : (stick[pad] & 2u) ? 0xFF : 0x80, pad);
++        }
+     }
+     if (!g_options.axis_presses.empty()) {
+         // Outside a hold the stick rests; within one it takes the given tilt.
+@@ -233,7 +244,31 @@ void time_frames() {
  }
  
  void apply_patches(bool boot) {
@@ -2227,7 +2271,7 @@ index 199204d..f32a3da 100644
          if (boot ? p.place == 1 : p.place == 0) continue;
          switch (p.bytes) {
          case 1: st8(p.address, static_cast<std::uint8_t>(p.value)); break;
-@@ -291,8 +315,115 @@ void report_load() {
+@@ -291,8 +326,115 @@ void report_load() {
      last_frame = g_frames;
  }
  
@@ -2343,7 +2387,7 @@ index 199204d..f32a3da 100644
      // Offline EE cache preparation: capture only explicitly requested frames.
      // Disabled for normal runs; the filenames retain the frame and address so
      // a headless preparer can associate each image with the scripted input.
-@@ -621,6 +752,7 @@ std::string quick_newest_state() { return {}; }
+@@ -621,6 +763,7 @@ std::string quick_newest_state() { return {}; }
  #endif
  
  std::uint64_t frame_count() { return g_frames; }
@@ -2351,6 +2395,24 @@ index 199204d..f32a3da 100644
  
  bool load_elf(const std::string &path, std::uint32_t &entry) {
      std::ifstream file(os::path(path), std::ios::binary);
+@@ -1008,11 +1151,16 @@ bool parse_press(const std::string &spec, Press &press) {
+     }
+     press.buttons = 0;
+     press.stick = 0;
++    press.pad = 0;
+     static const char *const kStick[4] = {"lup", "ldown", "lleft", "lright"};
+     std::size_t start = 0;
+     while (start <= rest.size()) {
+         const auto plus = rest.find('+', start);
+-        const std::string name = rest.substr(start, plus == std::string::npos ? std::string::npos : plus - start);
++        std::string name = rest.substr(start, plus == std::string::npos ? std::string::npos : plus - start);
++        if (name.size() > 2 && name.compare(0, 2, "p2") == 0) {  // the second controller (MC1Recomp: scripted 2-player runs)
++            press.pad = 1;
++            name = name.substr(2);
++        }
+         int bit = -1;
+         for (int i = 0; i < 16; ++i)
+             if (name == kNames[i]) bit = i;
 diff --git a/runtime/src/vif.cpp b/runtime/src/vif.cpp
 index 450889b..6ff44aa 100644
 --- a/runtime/src/vif.cpp

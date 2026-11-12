@@ -45,6 +45,11 @@ Windows 10 or 11 (64-bit), a CPU with AVX2 and a Direct3D 12 graphics card.
 MC2Recomp's Skip Intro needs a switch in the game's own code that Midnight Club does not seem to have, so the launcher does
 not show it.
 
+The game's split-screen 2-player cruises and races work: set **Players** to **Two** on the race setup screen (connect two
+controllers, or play player 1 on the keyboard and player 2 on a controller). Widescreen, the fixed HUD and 60 FPS work in
+both halves. Career saves go to the memory card file in `ps2-native-recomp/games/mc1` (the game offers to format it the
+first time).
+
 **P1 Controls** and **P2 Controls** work as in MC2Recomp: choose Controller or Keyboard (with the mouse) for player 1 and
 rebind every PS2 button and stick direction; the bindings are kept in `ps2-native-recomp/games/mc1/keys.ini`.
 
@@ -101,6 +106,7 @@ the game runs, it reads its data from your disc image.
     movies (a 640x448 window of 720x480 frames) showed 480 lines, 32 of them empty memory under the picture;
   - at higher resolutions, a texture the game drew itself (the cars' reflection map) is read at the sample under the texture
     position instead of the screen pixel's own: the screen position made a 4-pixel screen-door grid over the cars at 4x;
+  - scripted presses for the second controller (`--press 100:p2cross`, used to test the 2-player races);
   - fair interrupt turns: pending DMAC channels are served in rotation, alternating with the INTC. A stream of instant VIF1
     transfers kept channel 1 pending, so the SIF0 interrupt (the IOP's replies) waited for frames, and the game, blocked in
     its rumble and sound calls, fell to about 10 frames a second while scraping a wall.
