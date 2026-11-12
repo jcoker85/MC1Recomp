@@ -104,8 +104,9 @@ the game runs, it reads its data from your disc image.
   - the HUD squeeze's frame width (`PS2_HUD_WIDTH`, 640 here; MC2's frame is 512);
   - the picture height of interlaced frame mode (SMODE2 INT=1, FFMD=1) counts both fields, as PCSX2 reads it: the intro
     movies (a 640x448 window of 720x480 frames) showed 480 lines, 32 of them empty memory under the picture;
-  - at higher resolutions, a texture the game drew itself (the cars' reflection map) is read at the sample under the texture
-    position instead of the screen pixel's own: the screen position made a 4-pixel screen-door grid over the cars at 4x;
+  - at higher resolutions, a triangle with a texture the game drew itself (the cars' reflection map) reads the sample under the
+    texture position instead of the screen pixel's own: the screen position made a 4-pixel screen-door grid over the cars at
+    4x. Sprites keep the screen sample, so a picture drawn elsewhere and pasted in keeps its finer samples;
   - scripted presses for the second controller (`--press 100:p2cross`, used to test the 2-player races);
   - fair interrupt turns: pending DMAC channels are served in rotation, alternating with the INTC. A stream of instant VIF1
     transfers kept channel 1 pending, so the SIF0 interrupt (the IOP's replies) waited for frames, and the game, blocked in

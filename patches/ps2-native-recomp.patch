@@ -1513,7 +1513,7 @@ index a7a62ad..e10c068 100644
  void stats();
  
 diff --git a/runtime/src/gs/gpu/gs.wgsl b/runtime/src/gs/gpu/gs.wgsl
-index db25862..8cf4a03 100644
+index db25862..6d5cecc 100644
 --- a/runtime/src/gs/gpu/gs.wgsl
 +++ b/runtime/src/gs/gpu/gs.wgsl
 @@ -20,6 +20,14 @@ override EXPLICIT_FMA: bool = false;
@@ -1559,7 +1559,7 @@ index db25862..8cf4a03 100644
      return s;
  }
  
-@@ -719,12 +734,31 @@ fn tap32(s: Setup, page: u32, n: u32, k: u32) -> u32 {
+@@ -719,12 +734,32 @@ fn tap32(s: Setup, page: u32, n: u32, k: u32) -> u32 {
      return convert(s, raw & s.tf.mask);
  }
  
@@ -1576,8 +1576,9 @@ index db25862..8cf4a03 100644
 +
 +// Only textures in a colour format the GS can draw into (32, 24 and 16 bit, read directly) take the sample under the texture
 +// position; palette textures (indices sent from the EE) keep the screen sample, as before.
++var<private> g_sub_by_tex: bool = false;
 +fn drawn_format(s: Setup) -> bool {
-+    return s.dec == 0xFFFFFFFFu && (s.tpsm == 0x00u || s.tpsm == 0x01u || s.tpsm == 0x02u || s.tpsm == 0x0Au);
++    return g_sub_by_tex && s.dec == 0xFFFFFFFFu && (s.tpsm == 0x00u || s.tpsm == 0x01u || s.tpsm == 0x02u || s.tpsm == 0x0Au);
 +}
 +
 +fn sample(s: Setup, uin: f32, vin: f32, k_screen: u32) -> u32 {
@@ -1593,7 +1594,7 @@ index db25862..8cf4a03 100644
      }
      let u = uin - 0.5;
      let v = vin - 0.5;
-@@ -734,6 +768,11 @@ fn sample(s: Setup, uin: f32, vin: f32, k: u32) -> u32 {
+@@ -734,6 +769,11 @@ fn sample(s: Setup, uin: f32, vin: f32, k: u32) -> u32 {
      let xb = texel_x(s, x0 + 1);
      let ya = texel_y(s, y0);
      let yb = texel_y(s, y0 + 1);
@@ -1605,7 +1606,7 @@ index db25862..8cf4a03 100644
      if (s.dec == 0xFFFFFFFFu && s.tpsm <= 1u) {
          // 32-bit colour: the page position and the position inside the page are separate sums of the x and the y part
          let pxa = (xa >> 6u) * 8192u + s.tf.base;
-@@ -744,9 +783,9 @@ fn sample(s: Setup, uin: f32, vin: f32, k: u32) -> u32 {
+@@ -744,9 +784,9 @@ fn sample(s: Setup, uin: f32, vin: f32, k: u32) -> u32 {
          let nxb = spread_x(xb);
          let nya = spread_y(ya);
          let nyb = spread_y(yb);
@@ -1617,7 +1618,7 @@ index db25862..8cf4a03 100644
  }
  
  // Mip level n of the texture as a setup of its own (raster.cpp, level_setup): its base pointer and buffer width from the table, its size
-@@ -815,6 +854,50 @@ fn mip_pick(s: Setup, q: f32) -> Pick {
+@@ -815,6 +855,50 @@ fn mip_pick(s: Setup, q: f32) -> Pick {
      return Pick(u32(whole), lod - whole, linear);
  }
  
@@ -1668,7 +1669,7 @@ index db25862..8cf4a03 100644
  fn blend4(c00: u32, c10: u32, c01: u32, c11: u32, fx: f32, fy: f32) -> u32 {
      let a = vec4<f32>(vec4<u32>(c00 & 0xFFu, (c00 >> 8u) & 0xFFu, (c00 >> 16u) & 0xFFu, c00 >> 24u));
      let b = vec4<f32>(vec4<u32>(c10 & 0xFFu, (c10 >> 8u) & 0xFFu, (c10 >> 16u) & 0xFFu, c10 >> 24u));
-@@ -990,13 +1073,16 @@ fn plot(s: Setup, x: i32, y: i32, k: u32, at: Attr) {
+@@ -990,13 +1074,16 @@ fn plot(s: Setup, x: i32, y: i32, k: u32, at: Attr) {
                      lv = nv * f32(1u << l.th);
                  }
              }
@@ -1686,7 +1687,7 @@ index db25862..8cf4a03 100644
          let tr = i32(t & 0xFFu);
          let tg = i32((t >> 8u) & 0xFFu);
          let tb = i32((t >> 16u) & 0xFFu);
-@@ -1149,6 +1235,21 @@ fn plot(s: Setup, x: i32, y: i32, k: u32, at: Attr) {
+@@ -1149,6 +1236,21 @@ fn plot(s: Setup, x: i32, y: i32, k: u32, at: Attr) {
              g = g & 0xFF;
              b = b & 0xFF;
          }
@@ -1708,7 +1709,7 @@ index db25862..8cf4a03 100644
          var out_a = u32(a & 0xFF);
          if (has(s, F_FBA)) {
              out_a = out_a | 0x80u;
-@@ -1165,7 +1266,7 @@ fn plot(s: Setup, x: i32, y: i32, k: u32, at: Attr) {
+@@ -1165,7 +1267,7 @@ fn plot(s: Setup, x: i32, y: i32, k: u32, at: Attr) {
  }
  
  const PRIM_WORDS: u32 = 28u;
@@ -1717,15 +1718,20 @@ index db25862..8cf4a03 100644
  const MIP_WORDS: u32 = 8u;
  
  fn fat(i: u32) -> f32 {
-@@ -1198,6 +1299,7 @@ fn shade_at(p: u32, s: Setup, x: i32, y: i32, k: u32, px: f32, py: f32) {
+@@ -1197,7 +1299,12 @@ fn edge_in(w: f32, inclusive: u32) -> bool {
+ fn shade_at(p: u32, s: Setup, x: i32, y: i32, k: u32, px: f32, py: f32) {
      rt_copy = false;
      let kind = data[p + 1u];
++    // triangles only: a sprite can take its texture position from the console pixel's corner (point-sampled, a texel or more
++    // a pixel), the same for all of the pixel's samples, and must keep reading the screen sample (a picture drawn elsewhere and
++    // pasted in as a sprite, MC2's turning car on the car select, kept its finer samples that way)
++    g_sub_by_tex = kind == 0u;
      var at: Attr;
 +    g_tex_grad_on = false;
      switch kind {
          case 0u {
              let x0 = fat(p + 4u);
-@@ -1264,6 +1366,21 @@ fn shade_at(p: u32, s: Setup, x: i32, y: i32, k: u32, px: f32, py: f32) {
+@@ -1264,6 +1371,21 @@ fn shade_at(p: u32, s: Setup, x: i32, y: i32, k: u32, px: f32, py: f32) {
              let t2 = vertex_tex(p, 2u);
              var t = weighted4(t0, t1, t2, w0, w1, w2);
              t.w = bary1(t0.w, t1.w, t2.w, w1, w2);
@@ -1747,7 +1753,7 @@ index db25862..8cf4a03 100644
              at = Attr(c.x, c.y, c.z, c.w, t.x, t.y, t.z, t.w, z_at(p, sum2(fat(p + 25u), fat(p + 26u), w1, w2)));
          }
          case 1u {
-@@ -1373,14 +1490,29 @@ fn shade_at(p: u32, s: Setup, x: i32, y: i32, k: u32, px: f32, py: f32) {
+@@ -1373,14 +1495,29 @@ fn shade_at(p: u32, s: Setup, x: i32, y: i32, k: u32, px: f32, py: f32) {
  
  @compute @workgroup_size(64)
  fn decode(@builtin(global_invocation_id) gid: vec3<u32>) {
