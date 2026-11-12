@@ -783,6 +783,20 @@ static int prepare(const Game* g, Launch* L, wchar_t* err, size_t errn) {
                 if (line[0] < '0' || line[0] > '9') continue;
                 size_t ln = strlen(line);
                 while (ln && (line[ln - 1] == '\n' || line[ln - 1] == '\r')) line[--ln] = 0;
+                /* Skip Intro moves two of the widescreen patch's addresses. They are fields of a camera object on the game's
+                 * heap, and the movie player that -novideo skips leaves a 64-byte block behind it, so with Skip Intro that
+                 * object (and everything allocated after it) sits 0x40 higher: 0x426180 and 0x4261C0 hold other fields, and
+                 * the patch's 1.336 and 1.0 put the driving HUD out of shape (digits beside their boxes, a narrow map frame).
+                 * Found 2026-11-12 by comparing RAM on the title screen and in a London cruise with and without -novideo;
+                 * the patch's other addresses (0x4784xx) are not on that part of the heap and stay. */
+                if (o->skipintro && ln > 10 && line[0] == '1' && line[1] == ' ') {
+                    unsigned addr = (unsigned)strtoul(line + 2, NULL, 16);
+                    if (addr == 0x00426180u || addr == 0x004261C0u) {
+                        char hex[9];
+                        snprintf(hex, sizeof hex, "%08X", addr + 0x40u);
+                        memcpy(line + 2, hex, 8);
+                    }
+                }
                 if (strlen(L->boot_text) + ln + 3 < sizeof L->boot_text) {
                     strcat(L->boot_text, line);
                     strcat(L->boot_text, "\r\n");

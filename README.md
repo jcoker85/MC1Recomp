@@ -42,7 +42,9 @@ Windows 10 or 11 (64-bit), a CPU with AVX2 and a Direct3D 12 graphics card.
   16-bit picture)
 - **Smooth Distant Textures** (less shimmer on far buildings; not something a PS2 does)
 - **Skip Intro**: straight to the title screen, with the game's own developer switch (`-novideo`); it also leaves out the
-  attract video on the title screen
+  attract video on the title screen. The skipped movie player would have left a 64-byte block on the game's heap, so a
+  camera object the widescreen patch writes to sits 0x40 bytes higher; with Skip Intro on, the launcher moves the patch's
+  two lines for that object (`0x426180`, `0x4261C0`) along with it (without that the driving HUD came out of shape)
 
 The game's split-screen 2-player cruises and races work: set **Players** to **Two** on the race setup screen (connect two
 controllers, or play player 1 on the keyboard and player 2 on a controller). Widescreen, the fixed HUD and 60 FPS work in
