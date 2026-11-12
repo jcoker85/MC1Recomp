@@ -132,10 +132,7 @@ static const wchar_t* k_filter_names[3] = { L"Bilinear (PS2)", L"Nearest", L"Bil
 static const wchar_t* k_look_names[7] = { L"Crisp", L"Crisp + edges", L"Soft", L"Soft + edges", L"Sharp", L"Sharp + edges", L"FSR" };
 
 /* The Graphics tab's rows, in the order they are shown. */
-/* MC1Recomp: Midnight Club II's Skip Intro has no Midnight Club counterpart yet; its number comes after S_COUNT, so it is
- * never shown as a row. */
-enum { S_FULLSCREEN, S_SCALE, S_VSYNC, S_PACING, S_LOOK, S_TEXFILTER, S_SIXTY, S_WIDE, S_HUD43, S_MENUS43, S_TRUECOLOR, S_DITHER, S_SMOOTH, S_DISC, S_BACK, S_COUNT,
-       S_SKIPINTRO };
+enum { S_FULLSCREEN, S_SCALE, S_VSYNC, S_PACING, S_LOOK, S_TEXFILTER, S_SIXTY, S_WIDE, S_HUD43, S_MENUS43, S_TRUECOLOR, S_DITHER, S_SMOOTH, S_SKIPINTRO, S_DISC, S_BACK, S_COUNT };
 static int g_page = PAGE_LIST;
 static int g_srow;      /* highlighted settings row */
 static int g_sscroll;   /* how far the settings rows are scrolled up, in pixels */
@@ -756,6 +753,7 @@ static int prepare(const Game* g, Launch* L, wchar_t* err, size_t errn) {
     if (!o->truecolor && !o->dither) wcscat(L->name, L" nodither");
     if (o->pacing) wcscat(L->name, L" framepacing");
     if (o->vsync) wcscat(L->name, L" vsync");
+    if (o->skipintro) wcscat(L->name, L" skipintro");
     if (!L->name[0]) wcscpy(L->name, L" original");
     swprintf(L->title, 256, L"%ls (%ls)", g->title, L->name + 1);
 
@@ -852,6 +850,10 @@ static int prepare(const Game* g, Launch* L, wchar_t* err, size_t errn) {
         g->exe_rel, g->disc, o->fullscreen ? L"--fullscreen" : L"--window", gd, gd, g->id, gd);
     if (g->toggles) n += swprintf(L->cmd + n, 2048 - n, L" --patches \"%ls\"", L->boot);
     if (wide) n += swprintf(L->cmd + n, 2048 - n, L" --widescreen");
+    /* Skip Intro: the game's own developer switch -novideo (read with a value, "name=value", by the constructor at 0x141234;
+     * the movie player at 0x1412A8 plays nothing while it is set): it starts at the title screen, without the Rockstar and
+     * Angel Studios logos and the intro movie (and the attract video on the title). --arg hands it to the game as argv[1]. */
+    if (o->skipintro) n += swprintf(L->cmd + n, 2048 - n, L" --arg -novideo=1");
     return 1;
 }
 
@@ -1485,13 +1487,13 @@ static void paint_settings(HDC mem) {
         [S_LOOK] = L"Picture Mode", [S_TEXFILTER] = L"Texture Filtering", [S_SIXTY] = L"60 FPS", [S_WIDE] = L"Widescreen", [S_HUD43] = L"Fixed Widescreen HUD",
         [S_MENUS43] = L"Menu/Movie Aspect Ratio",
         [S_TRUECOLOR] = L"Color Settings", [S_DITHER] = L"Dithering",
-        [S_SMOOTH] = L"Smooth Distant Textures", [S_DISC] = L"Disc Image", [S_BACK] = L"BACK",
+        [S_SMOOTH] = L"Smooth Distant Textures", [S_SKIPINTRO] = L"Skip Intro", [S_DISC] = L"Disc Image", [S_BACK] = L"BACK",
     };
     /* Only the patch credits have a line under the name. */
     static const wchar_t* notes[S_COUNT] = { [S_WIDE] = L"Patch by PeterDelta", [S_SIXTY] = L"Patch by asasega" };
     int vals[S_COUNT] = {
         [S_FULLSCREEN] = o->fullscreen, [S_VSYNC] = o->vsync, [S_PACING] = o->pacing, [S_SIXTY] = o->sixty, [S_WIDE] = o->wide,
-        [S_HUD43] = o->hud43, [S_DITHER] = o->dither, [S_SMOOTH] = o->smooth,
+        [S_HUD43] = o->hud43, [S_DITHER] = o->dither, [S_SMOOTH] = o->smooth, [S_SKIPINTRO] = o->skipintro,
     };
 
     int saved = SaveDC(mem);

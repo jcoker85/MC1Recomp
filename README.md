@@ -41,9 +41,8 @@ Windows 10 or 11 (64-bit), a CPU with AVX2 and a Direct3D 12 graphics card.
 - **Color Settings**: the PS2's 16-bit picture, or the game's full 32-bit picture; **Dithering** (the PS2's dither on the
   16-bit picture)
 - **Smooth Distant Textures** (less shimmer on far buildings; not something a PS2 does)
-
-MC2Recomp's Skip Intro needs a switch in the game's own code that Midnight Club does not seem to have, so the launcher does
-not show it.
+- **Skip Intro**: straight to the title screen, with the game's own developer switch (`-novideo`); it also leaves out the
+  attract video on the title screen
 
 The game's split-screen 2-player cruises and races work: set **Players** to **Two** on the race setup screen (connect two
 controllers, or play player 1 on the keyboard and player 2 on a controller). Widescreen, the fixed HUD and 60 FPS work in
