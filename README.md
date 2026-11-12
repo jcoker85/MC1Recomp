@@ -70,8 +70,11 @@ bash tools/build.sh "/c/Games/Midnight Club - Street Racing (USA).iso"
 1. fetches ps2-native-recomp v0.0.4 (the submodule) and applies `patches/ps2-native-recomp.patch`;
 2. sets up the toolkit's build tools;
 3. translates the game's code from your disc into C++ and builds the game program (`ps2run.exe`);
-4. downloads the launcher's icon (`tools/make_icon.ps1`; any square PNG at `hub/icon/hub.png` is used instead) and builds
-   the launcher, `MC1Recomp.exe`, whose icon the game window shows too.
+4. builds the launcher, `MC1Recomp.exe`. It has no icon built in: on its first start it downloads its icon (credited
+   below) into `covers/icon.ico`, beside the box art, and its window and the game window show it from there (a square
+   PNG put at `covers/icon.png` is used instead). It also writes the icon into its own `MC1Recomp.exe` (it renames
+   itself to `MC1Recomp.exe.old` and puts a copy with the icon in its place), so Explorer and shortcuts show it from the
+   next start; the release zip's launcher has none.
 
 The first build takes a while. Code the first build did not see is translated while you play and kept for next time.
 
@@ -119,7 +122,7 @@ the game runs, it reads its data from your disc image.
     transfers kept channel 1 pending, so the SIF0 interrupt (the IOP's replies) waited for frames, and the game, blocked in
     its rumble and sound calls, fell to about 10 frames a second while scraping a wall.
 - `ps2-native-recomp/`: the toolkit, as a git submodule.
-- `tools/`: the build script, the release packaging script, the icon script and `mips.py` (a small R5900 disassembler and
+- `tools/`: the build script, the release packaging script and `mips.py` (a small R5900 disassembler and
   address-reference finder used to trace the game's code).
 
 ## Credits
@@ -132,7 +135,7 @@ the game runs, it reads its data from your disc image.
   written after AMD's published shaders.
 - Box art in the launcher: [libretro-thumbnails](https://github.com/libretro-thumbnails/libretro-thumbnails).
 - The launcher and game window icon: [Midnight Club: Street Racing icon by r_dsgnd](https://www.steamgriddb.com/icon/119111)
-  on SteamGridDB, downloaded at build time.
+  on SteamGridDB, downloaded by the launcher on its first start.
 
 ## License
 

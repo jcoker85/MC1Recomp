@@ -9,7 +9,7 @@
 # 2. sets up the toolkit's build tools (its scripts/setup.sh);
 # 3. translates the game's code from your disc into C++ and builds the game program (the toolkit's scripts/port.sh), with the
 #    Fixed Widescreen HUD's hooks (mc1-options/hud43.pnach, made by mc1-options/hud43.py; off until the launcher turns it on);
-# 4. builds the launcher, MC1Recomp.exe, in this folder (with an icon if tools/make_icon.ps1 finds one).
+# 4. builds the launcher, MC1Recomp.exe, in this folder (its icon is downloaded by the launcher itself on its first start).
 # The widescreen / 60 FPS / 4:3 menus options (mc1-options/) are memory patches and runtime settings the launcher hands the
 # game at start, so they need no rebuild. Everything taken from the disc stays in ps2-native-recomp/games and ps2-native-recomp/generated, which git ignores.
 set -euo pipefail
@@ -40,7 +40,6 @@ bash scripts/port.sh mc1 "$iso" --native-only \
   --pnach ../mc1-options/hud43.pnach --pnach-section "HUD 4:3"
 
 cd "$here"
-powershell -NoProfile -ExecutionPolicy Bypass -File tools/make_icon.ps1
 cmd //c "hub\\build.cmd"
 echo
 echo "Done: run MC1Recomp.exe, press Play and choose your disc image (an .iso)."
