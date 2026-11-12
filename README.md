@@ -100,6 +100,12 @@ the game runs, it reads its data from your disc image.
   - speed: the vector unit interpreter goes on in compiled code after a jump (two of the game's busiest VU1 programs start
     with a branch in a branch's delay slot, which only the interpreter runs: 17 % of the game's thread), and Smooth
     Distant Textures reads 4x fewer texels (single-texel taps, only past 1.5 texels a sample);
+  - graphics speed at higher resolutions: the game streams its textures through one place in video memory (in London some
+    270 a frame), and each upload over a texture still in use ended the drawing run, so the graphics card drew a frame in
+    ~270 small runs, each waiting for the one before (10 to 14 ms a frame at 4x on an RTX 4090, too close to 60 FPS's
+    16.7 ms). Now the run's textures are copied aside, already decoded, and the run goes on (about 11 runs a frame), and a
+    texture upload writes the 16 samples of each pixel at 4x in parallel. The same London frame takes about 4.6 ms; the
+    pictures are bit-for-bit the same (`PS2_RENAME=0` turns the first part off, for comparison);
   - the HUD squeeze's frame width (`PS2_HUD_WIDTH`, 640 here; MC2's frame is 512);
   - the picture height of interlaced frame mode (SMODE2 INT=1, FFMD=1) counts both fields, as PCSX2 reads it: the intro
     movies (a 640x448 window of 720x480 frames) showed 480 lines, 32 of them empty memory under the picture;
