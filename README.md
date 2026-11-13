@@ -120,7 +120,13 @@ the game runs, it reads its data from your disc image.
   - scripted presses for the second controller (`--press 100:p2cross`, used to test the 2-player races);
   - fair interrupt turns: pending DMAC channels are served in rotation, alternating with the INTC. A stream of instant VIF1
     transfers kept channel 1 pending, so the SIF0 interrupt (the IOP's replies) waited for frames, and the game, blocked in
-    its rumble and sound calls, fell to about 10 frames a second while scraping a wall.
+    its rumble and sound calls, fell to about 10 frames a second while scraping a wall;
+  - those three VU1 programs that start with a branch in a branch's delay slot (`0x12C0`, `0x1438`, `0x15B0`: `IBNE` with
+    `BAL 0x1610` in its delay slot and the same NOP at both places it can go on) are compiled (`recomp/vurecomp_gen.cpp`,
+    from SR2Recomp, whose smoke particle program starts the same way). Taken or not, that branch changes nothing, so it is
+    compiled as a NOP; the program keeps its key, so the runtime finds it. Over a recorded 8,700-frame session the
+    interpreter is no longer used at all (3.2 million runs before), the replay stays the same at all 580 checkpoints, and
+    it runs about 2.5 % faster (0.3 ms a frame).
 - `ps2-native-recomp/`: the toolkit, as a git submodule.
 - `tools/`: the build script, the release packaging script and `mips.py` (a small R5900 disassembler and
   address-reference finder used to trace the game's code).

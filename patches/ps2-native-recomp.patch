@@ -525,6 +525,77 @@ index 6c7c2dc..b761612 100644
      SDL_ShowCursor(SDL_DISABLE);  // no pointer over the game (the title bar and the window's edge still show it)
      g_notice_text = kStartNotice;
      std::fprintf(stderr, "[menu] the quick menu: F1%s on the keyboard, hold Select then press Start (or Guide) on a controller\n",
+diff --git a/recomp/vurecomp_gen.cpp b/recomp/vurecomp_gen.cpp
+index 9c75bb7..360c546 100644
+--- a/recomp/vurecomp_gen.cpp
++++ b/recomp/vurecomp_gen.cpp
+@@ -498,7 +498,28 @@ int vi_written(const std::string &code) {
+     return std::atoi(code.c_str() + at + 10);
+ }
+ 
+-std::string generate(const Program &p, std::string &name) {
++// SR2Recomp: a branch with no link (B, IBxx) whose delay slot holds another branch B2, where the instruction at its target is the
++// same as the one in B2's own delay slot. Taken or not, B2 runs, then that same instruction, then B2's target with the same link:
++// the outer branch changes nothing (the interpreter runs it so too: vu_micro.cpp, the npc chain). It is compiled as a NOP, so the
++// program needs no branch-in-delay-slot support. Smuggler's Run 2 enters its particle program (VU1 0x1420, the smoke and dust,
++// up to 1,000 calls a frame) through such a trampoline, IBNE 0x1438 / BAL 0x1770 / NOP / NOP, which left the whole program to the
++// interpreter. The program's key is still made from the real code (the runtime's lookup sees that); only what is generated
++// changes.
++std::vector<std::uint8_t> quiet_delay_branches(const std::vector<std::uint8_t> &code, std::uint32_t mask, std::uint32_t entry) {
++    std::vector<std::uint8_t> out = code;
++    for (std::uint32_t pc : ps2::vu::reachable(code.data(), mask, entry)) {
++        if (!ps2::vu::branch_in_delay_slot(code.data(), mask, pc)) continue;
++        const std::uint32_t lo = word(code, pc), op = lo >> 25;
++        if (!(op == 0x20 || (op >= 0x28 && op <= 0x2F && op != 0x2A && op != 0x2B))) continue;
++        const std::uint32_t target = ps2::vu::branch_target(lo, pc, mask), slot = (pc + 16u) & mask;
++        if (target == slot || std::memcmp(code.data() + target, code.data() + slot, 8) != 0) continue;
++        const std::uint32_t nop = 0x8000033Cu;  // lower NOP; the upper instruction of the pair stays
++        std::memcpy(out.data() + pc, &nop, 4);
++    }
++    return out;
++}
++
++std::string generate_quiet(const Program &p, std::string &name) {
+     name.clear();
+     const std::uint32_t kMask = p.unit == 0 ? 4095u : 16383u;
+     const std::vector<std::uint32_t> pcs = ps2::vu::reachable(p.code.data(), kMask, p.entry);
+@@ -688,11 +709,17 @@ std::string generate(const Program &p, std::string &name) {
+ 
+ }
+ 
++std::string generate(const Program &p, std::string &name) {
++    Program q = p;
++    q.code = quiet_delay_branches(p.code, p.unit == 0 ? 4095u : 16383u, p.entry);
++    return generate_quiet(q, name);
++}
++
+ namespace ps2::vurecomp {
+ 
+ // Bump this when the generated code changes in a way the headers do not show (a change in this file): libraries made earlier
+ // are then left alone and built again (vu_live.cpp).
+-const char *const kGeneratorVersion = "vurecomp 5";
++const char *const kGeneratorVersion = "vurecomp 5 sr2-quiet-delay-branches";
+ 
+ Result generate_files(std::vector<Input> inputs, const fs::path &out_dir, std::uint64_t live_stamp, std::size_t per_file, bool with_targets) {
+     std::vector<Program> programs;
+@@ -709,7 +736,7 @@ Result generate_files(std::vector<Input> inputs, const fs::path &out_dir, std::u
+             std::fprintf(stderr, "%016llX_%04X: key mismatch, skipped\n", static_cast<unsigned long long>(p.key), p.entry);
+             continue;
+         }
+-        if (ps2::vu::branch_in_delay_slot(p.code.data(), kMask, p.entry)) continue;
++        if (ps2::vu::branch_in_delay_slot(quiet_delay_branches(p.code, kMask, p.entry).data(), kMask, p.entry)) continue;
+         if (recorded_keys.emplace(p.unit, p.key).second) programs.push_back(std::move(p));
+     }
+     std::set<std::pair<int, std::uint64_t>> keys;
+@@ -728,7 +755,7 @@ Result generate_files(std::vector<Input> inputs, const fs::path &out_dir, std::u
+         }
+         for (std::uint32_t target : targets) {
+             const std::uint64_t key = ps2::vu::program_key(programs[i].code.data(), ps2::vu::reachable(programs[i].code.data(), kMask, target), target);
+-            if (ps2::vu::branch_in_delay_slot(programs[i].code.data(), kMask, target)) continue;
++            if (ps2::vu::branch_in_delay_slot(quiet_delay_branches(programs[i].code, kMask, target).data(), kMask, target)) continue;
+             if (keys.emplace(programs[i].unit, key).second) programs.push_back(Program{key, target, programs[i].code, programs[i].unit});
+         }
+     }
 diff --git a/runtime/include/ps2/system.hpp b/runtime/include/ps2/system.hpp
 index d0d445f..06951ad 100644
 --- a/runtime/include/ps2/system.hpp
